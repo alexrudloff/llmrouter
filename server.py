@@ -332,19 +332,41 @@ def call_anthropic_model(model, messages, max_tokens, system=None, api_key=None,
         raise
 
 
+def is_openai_reasoning_model(model: str) -> bool:
+    """Check if model is an OpenAI o-series reasoning model.
+
+    These models have different API requirements:
+    - Use max_completion_tokens instead of max_tokens
+    - Don't support temperature, top_p, frequency_penalty, presence_penalty
+    - Use 'developer' role instead of 'system' (auto-converted by API)
+    """
+    model_lower = model.lower()
+    # Match o1, o3, o4-mini, etc. but not gpt-4o
+    return (
+        model_lower.startswith("o1") or
+        model_lower.startswith("o3") or
+        model_lower.startswith("o4")
+    )
+
+
 def call_openai_model(model, messages, max_tokens, system=None, api_key=None, tools=None):
     """Call OpenAI API with tool support.
 
     Messages come in Anthropic format (content blocks), need conversion to OpenAI format.
     Tools come in Anthropic format, need conversion to OpenAI function format.
+    Handles both GPT-4o series and o-series reasoning models.
     """
     if not api_key:
         raise Exception("No API key provided in Authorization header")
 
+    is_reasoning = is_openai_reasoning_model(model)
+
     # Convert Anthropic-format messages to OpenAI format
     openai_messages = []
     if system:
-        openai_messages.append({"role": "system", "content": system})
+        # For reasoning models, use 'developer' role (API auto-converts 'system' anyway)
+        role = "developer" if is_reasoning else "system"
+        openai_messages.append({"role": role, "content": system})
 
     for msg in messages:
         role = msg.get("role", "user")
@@ -423,8 +445,15 @@ def call_openai_model(model, messages, max_tokens, system=None, api_key=None, to
     payload = {
         "model": model,
         "messages": openai_messages,
-        "max_tokens": max_tokens,
     }
+
+    # Reasoning models use max_completion_tokens, others use max_tokens
+    if is_reasoning:
+        payload["max_completion_tokens"] = max_tokens
+        # Note: reasoning models don't support temperature, top_p, penalties
+        # These are fixed at temperature=1, top_p=1, penalties=0
+    else:
+        payload["max_tokens"] = max_tokens
 
     # Convert tools to OpenAI function format
     # Tools may come in OpenAI format (from OpenClaw) or Anthropic format

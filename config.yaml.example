@@ -20,15 +20,27 @@ classifier:
 # Providers:
 #   - local: Ollama models (free, runs locally)
 #   - anthropic: Claude models (requires ANTHROPIC_API_KEY)
-#   - openai: GPT models (requires OPENAI_API_KEY)
+#   - openai: GPT/o-series models (requires OPENAI_API_KEY)
 #   - google: Gemini models (requires GOOGLE_API_KEY)
 #
+# OpenAI models:
+#   - gpt-4o, gpt-4o-mini: Fast, multimodal
+#   - o1, o3, o4-mini: Reasoning models (auto-detected, uses different API params)
+#
 models:
-  super_easy: "anthropic:claude-haiku-4-5-20251001" # Fast, cheap 
+  super_easy: "anthropic:claude-haiku-4-5-20251001" # Fast, cheap
   easy: "anthropic:claude-sonnet-4-20250514"        # Balanced
   medium: "anthropic:claude-sonnet-4-20250514"      # Balanced
   hard: "anthropic:claude-opus-4-20250514"          # Powerful
-  super_hard: "anthropic:claude-opus-4-20250514"    # Reserved for future
+  super_hard: "anthropic:claude-opus-4-20250514"    # Most capable
+
+# Alternative: OpenAI-only routing
+# models:
+#   super_easy: "openai:gpt-4o-mini"
+#   easy: "openai:gpt-4o-mini"
+#   medium: "openai:gpt-4o"
+#   hard: "openai:o3"           # Reasoning model
+#   super_hard: "openai:o3"     # Reasoning model
 
 # Provider API endpoints and keys
 # api_key: Set per provider. If not set, falls back to request Authorization header.
