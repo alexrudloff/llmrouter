@@ -129,9 +129,13 @@ def extract_text_content(content):
 
 
 def call_local_model(model, messages, max_tokens, system=None, api_key=None, tools=None):
-    """Call local Ollama model (api_key and tools ignored)"""
+    """Call local Ollama model with tool support.
+
+    Messages come in Anthropic format (content blocks), need conversion to Ollama format.
+    Tools come in OpenAI format, Ollama uses same format.
+    """
     try:
-        # Convert messages to simple text format for Ollama
+        # Convert Anthropic-format messages to Ollama format
         ollama_messages = []
 
         # Add system message if provided
@@ -142,32 +146,125 @@ def call_local_model(model, messages, max_tokens, system=None, api_key=None, too
             })
 
         for msg in messages:
-            ollama_messages.append({
-                "role": msg["role"],
-                "content": extract_text_content(msg.get("content"))
-            })
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+
+            # Handle Anthropic content blocks
+            if isinstance(content, list):
+                text_parts = []
+                tool_calls = []
+                tool_results = []
+
+                for block in content:
+                    if block.get("type") == "text":
+                        text_parts.append(block.get("text", ""))
+                    elif block.get("type") == "tool_use":
+                        # Convert to Ollama tool_call format
+                        tool_calls.append({
+                            "function": {
+                                "name": block.get("name", ""),
+                                "arguments": block.get("input", {})
+                            }
+                        })
+                    elif block.get("type") == "tool_result":
+                        tool_results.append({
+                            "tool_call_id": block.get("tool_use_id", ""),
+                            "content": block.get("content", "")
+                        })
+
+                if tool_results:
+                    # Tool results go as separate tool messages
+                    for tr in tool_results:
+                        ollama_messages.append({
+                            "role": "tool",
+                            "content": tr["content"] if isinstance(tr["content"], str) else json.dumps(tr["content"])
+                        })
+                elif tool_calls:
+                    # Assistant message with tool calls
+                    ollama_msg = {"role": "assistant"}
+                    if text_parts:
+                        ollama_msg["content"] = "\n".join(text_parts)
+                    ollama_msg["tool_calls"] = tool_calls
+                    ollama_messages.append(ollama_msg)
+                else:
+                    # Regular text message
+                    ollama_messages.append({
+                        "role": role,
+                        "content": "\n".join(text_parts) if text_parts else ""
+                    })
+            else:
+                # Simple string content
+                ollama_messages.append({
+                    "role": role,
+                    "content": content if isinstance(content, str) else extract_text_content(content)
+                })
+
+        # Build request payload
+        payload = {
+            "model": model,
+            "messages": ollama_messages,
+            "stream": False,
+            "options": {"num_predict": max_tokens}
+        }
+
+        # Add tools if provided (Ollama uses same format as OpenAI)
+        if tools:
+            ollama_tools = []
+            for tool in tools:
+                # Check if already in OpenAI/Ollama format
+                if tool.get("type") == "function" and "function" in tool:
+                    ollama_tools.append(tool)
+                else:
+                    # Anthropic format - convert
+                    ollama_tools.append({
+                        "type": "function",
+                        "function": {
+                            "name": tool.get("name", ""),
+                            "description": tool.get("description", ""),
+                            "parameters": tool.get("input_schema", {})
+                        }
+                    })
+            payload["tools"] = ollama_tools
 
         response = requests.post(
             PROVIDER_URLS["ollama"],
-            json={
-                "model": model,
-                "messages": ollama_messages,
-                "stream": False,
-                "options": {"num_predict": max_tokens}
-            },
+            json=payload,
             timeout=300
         )
         response.raise_for_status()
         data = response.json()
 
+        message = data.get("message", {})
+
+        # Convert Ollama response to Anthropic-like format
+        content_blocks = []
+
+        # Add text content if present
+        if message.get("content"):
+            content_blocks.append({"type": "text", "text": message["content"]})
+
+        # Convert tool_calls to Anthropic tool_use blocks
+        if message.get("tool_calls"):
+            for tc in message["tool_calls"]:
+                func = tc.get("function", {})
+                content_blocks.append({
+                    "type": "tool_use",
+                    "id": f"toolu_{int(time.time())}_{func.get('name', '')}",
+                    "name": func.get("name", ""),
+                    "input": func.get("arguments", {}) if isinstance(func.get("arguments"), dict) else json.loads(func.get("arguments", "{}"))
+                })
+
+        # Determine stop reason
+        stop_reason = "tool_use" if message.get("tool_calls") else "stop"
+
         return {
             "id": f"local-{int(time.time())}",
-            "content": [{"type": "text", "text": data["message"]["content"]}],
+            "content": content_blocks if content_blocks else [{"type": "text", "text": ""}],
             "usage": {
                 "input_tokens": data.get("prompt_eval_count", 0),
                 "output_tokens": data.get("eval_count", 0)
             },
-            "stop_reason": "stop"
+            "stop_reason": stop_reason
         }
     except Exception as e:
         raise Exception(f"Local model error: {e}")
