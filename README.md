@@ -6,13 +6,13 @@ An intelligent proxy that classifies incoming requests by complexity and routes 
 
 ## Status
 
-**Tested with Anthropic and OpenAI.** Google and local Ollama providers are implemented but untested.
+**Tested with Anthropic, OpenAI, Google Gemini, and Ollama.**
 
 ## Features
 
 - **5-tier complexity routing**: super_easy, easy, medium, hard, super_hard
 - **Local classification**: Uses Ollama to classify requests locally (no API costs for classification)
-- **Multi-provider support**: Anthropic (tested), OpenAI (tested), Google Gemini, Ollama (untested)
+- **Multi-provider support**: Anthropic, OpenAI, Google Gemini, Ollama (all tested)
 - **OpenAI o-series support**: Automatically handles o1, o3, o4-mini reasoning models with correct API parameters
 - **OAuth token support**: Works with Claude Code OAuth tokens (sk-ant-oat*)
 - **OpenAI-compatible API**: Drop-in replacement for existing integrations
@@ -69,6 +69,16 @@ models:
   super_hard: "openai:o3"             # Most capable reasoning
 ```
 
+```yaml
+# Google Gemini routing
+models:
+  super_easy: "google:gemini-2.0-flash"
+  easy: "google:gemini-2.0-flash"
+  medium: "google:gemini-2.0-flash"
+  hard: "google:gemini-2.0-flash"
+  super_hard: "google:gemini-2.0-flash"
+```
+
 **Note:** OpenAI o-series models (o1, o3, o4-mini) are automatically detected and use the correct API parameters (`max_completion_tokens` instead of `max_tokens`, `developer` role instead of `system`).
 
 ### Classifier
@@ -111,7 +121,17 @@ classifier:
   model: "gpt-4o-mini"
 ```
 
-Choose remote (anthropic/openai) if:
+#### Google Classification
+
+Uses Google Gemini for classification.
+
+```yaml
+classifier:
+  provider: "google"
+  model: "gemini-2.0-flash"
+```
+
+Choose remote (anthropic/openai/google) if:
 - Your machine can't run local models
 - You want simpler setup (no Ollama required)
 
@@ -142,10 +162,10 @@ This allows routing to multiple providers without passing different keys per req
 - `anthropic:claude-*` - Anthropic Claude models (tested)
 - `openai:gpt-*` - OpenAI GPT models (tested)
 - `openai:o1-*`, `openai:o3-*`, `openai:o4-*` - OpenAI reasoning models (tested)
-- `google:gemini-*` - Google Gemini models (untested)
+- `google:gemini-*` - Google Gemini models (tested)
+- `local:model-name` - Local Ollama models (tested)
 - `deepseek:deepseek-*` - DeepSeek models (untested)
 - `kimi:moonshot-*` - Kimi/Moonshot models (untested)
-- `local:model-name` - Local Ollama models (untested)
 
 ## Usage
 

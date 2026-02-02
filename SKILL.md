@@ -1,6 +1,6 @@
 ---
 name: llmrouter
-description: Intelligent LLM proxy that routes requests to appropriate models based on complexity. Save money by using cheaper models for simple tasks. Tested with Anthropic and OpenAI.
+description: Intelligent LLM proxy that routes requests to appropriate models based on complexity. Save money by using cheaper models for simple tasks. Tested with Anthropic, OpenAI, Gemini, and Ollama.
 homepage: https://github.com/alexrudloff/llmrouter
 metadata: {"openclaw":{"emoji":"🔀","homepage":"https://github.com/alexrudloff/llmrouter","os":["darwin","linux"],"requires":{"bins":["python3"],"anyBins":["pip","pip3"]},"primaryEnv":"ANTHROPIC_API_KEY"}}
 ---
@@ -11,7 +11,7 @@ An intelligent proxy that classifies incoming requests by complexity and routes 
 
 **Works with [OpenClaw](https://github.com/openclaw/openclaw)** to reduce token usage and API costs by routing simple requests to smaller models.
 
-**Status:** Tested with Anthropic and OpenAI (including o-series reasoning models). Google and local Ollama providers are implemented but untested.
+**Status:** Tested with Anthropic, OpenAI (including o-series), Google Gemini, and Ollama.
 
 ## Quick Start
 
@@ -78,6 +78,14 @@ models:
   medium: "openai:gpt-4o"
   hard: "openai:o3-mini"
   super_hard: "openai:o3"
+
+# Google Gemini routing
+models:
+  super_easy: "google:gemini-2.0-flash"
+  easy: "google:gemini-2.0-flash"
+  medium: "google:gemini-2.0-flash"
+  hard: "google:gemini-2.0-flash"
+  super_hard: "google:gemini-2.0-flash"
 ```
 
 **Note:** o-series models (o1, o3, o4-mini) are auto-detected and use correct API params.
@@ -107,15 +115,22 @@ classifier:
   model: "gpt-4o-mini"
 ```
 
-Use remote (anthropic/openai) if your machine can't run local models.
+**Google** - Uses Gemini:
+```yaml
+classifier:
+  provider: "google"
+  model: "gemini-2.0-flash"
+```
+
+Use remote (anthropic/openai/google) if your machine can't run local models.
 
 ### Supported Providers
 
 - `anthropic:claude-*` - Anthropic Claude models (tested)
 - `openai:gpt-*` - OpenAI GPT models (tested)
 - `openai:o1-*`, `openai:o3-*`, `openai:o4-*` - OpenAI reasoning models (tested)
-- `google:gemini-*` - Google Gemini models (untested)
-- `local:model-name` - Local Ollama models (untested)
+- `google:gemini-*` - Google Gemini models (tested)
+- `local:model-name` - Local Ollama models (tested)
 
 ## Complexity Levels
 
