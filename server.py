@@ -103,7 +103,17 @@ def parse_provider_model(provider_model_str):
 
 
 def get_provider_key(provider, request_key=None):
-    """Get API key for a provider. Config key takes priority, falls back to request header."""
+    """Get API key for a provider.
+
+    Priority:
+    1. OAuth token from request header (if present) - takes priority
+    2. API key from config (if configured)
+    3. Regular API key from request header (fallback)
+    """
+    # If request has OAuth token, always use it (takes priority over config)
+    if request_key and is_oauth_token(request_key):
+        return request_key
+    # Otherwise use config key if available, else fall back to request key
     return PROVIDER_KEYS.get(provider) or request_key
 
 
@@ -1102,12 +1112,12 @@ class RouterHandler(BaseHTTPRequestHandler):
             if auth_header.startswith("Bearer "):
                 api_key = auth_header[7:]  # Strip "Bearer " prefix
 
-            # Debug: log API key prefix and auth type
+            # Debug: log API key prefix and auth type (request vs effective)
             if api_key:
-                auth_type = "OAuth" if is_oauth_token(api_key) else "API Key"
-                log(f"  Auth: {auth_type} ({api_key[:15]}...{api_key[-4:]})")
+                req_auth_type = "OAuth" if is_oauth_token(api_key) else "API Key"
+                log(f"  Request Auth: {req_auth_type} ({api_key[:10]}...{api_key[-4:]})")
             else:
-                log(f"  WARNING: No API key in Authorization header")
+                log(f"  Request Auth: None (no Authorization header)")
 
             # Read request body
             content_length = int(self.headers.get("Content-Length", 0))
@@ -1244,6 +1254,9 @@ class RouterHandler(BaseHTTPRequestHandler):
                     return
                 # Use provider-specific key from config, fall back to request header
                 effective_key = get_provider_key(provider, api_key)
+                eff_auth_type = "OAuth" if is_oauth_token(effective_key) else "API Key"
+                eff_source = "config" if PROVIDER_KEYS.get(provider) == effective_key else "request"
+                log(f"  Effective Auth: {eff_auth_type} from {eff_source} ({effective_key[:10]}...{effective_key[-4:]})")
                 provider_response = provider_fn(
                     target_model, provider_messages, max_tokens, system_content, effective_key, tools
                 )
