@@ -1,0 +1,41 @@
+# Router Configuration
+# Configure model routing for different complexity levels
+
+# Server settings
+server:
+  host: "127.0.0.1"
+  port: 4001  # Default port, can be overridden with --port
+
+# Classifier settings
+classifier:
+  model: "qwen2.5:3b"
+  ollama_url: "http://localhost:11434/api/generate"
+  routes_file: "ROUTES.md"
+
+# Model routing by complexity level
+# Format: "provider:model" where provider is: local, anthropic, openai, google
+#
+# Providers:
+#   - local: Ollama models (free, runs locally)
+#   - anthropic: Claude models (requires ANTHROPIC_API_KEY)
+#   - openai: GPT models (requires OPENAI_API_KEY)
+#   - google: Gemini models (requires GOOGLE_API_KEY)
+#
+models:
+  super_easy: "anthropic:claude-haiku-4-5-20251001" # Fast, cheap - local too unreliable
+  easy: "anthropic:claude-haiku-4-5-20251001"       # Fast, cheap
+  medium: "anthropic:claude-sonnet-4-20250514"      # Balanced
+  hard: "anthropic:claude-opus-4-20250514"          # Powerful
+  super_hard: "anthropic:claude-opus-4-20250514"    # Reserved for future
+
+# Provider API endpoints (don't change unless using custom deployments)
+providers:
+  anthropic:
+    url: "https://api.anthropic.com/v1/messages"
+    version: "2023-06-01"
+  openai:
+    url: "https://api.openai.com/v1/chat/completions"
+  google:
+    url: "https://generativelanguage.googleapis.com/v1beta/models"
+  ollama:
+    url: "http://localhost:11434/api/chat"
