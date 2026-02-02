@@ -1,8 +1,8 @@
 ---
 name: llmrouter
-description: Intelligent LLM proxy that routes requests to appropriate models based on complexity. Save money by using cheaper models for simple tasks. Currently tested with Anthropic only.
+description: Intelligent LLM proxy that routes requests to appropriate models based on complexity. Save money by using cheaper models for simple tasks. Tested with Anthropic and OpenAI.
 homepage: https://github.com/alexrudloff/llmrouter
-metadata: {"openclaw":{"emoji":"🔀","homepage":"https://github.com/alexrudloff/llmrouter","os":["darwin","linux"],"requires":{"bins":["python3","ollama"],"anyBins":["pip","pip3"]},"primaryEnv":"ANTHROPIC_API_KEY"}}
+metadata: {"openclaw":{"emoji":"🔀","homepage":"https://github.com/alexrudloff/llmrouter","os":["darwin","linux"],"requires":{"bins":["python3"],"anyBins":["pip","pip3"]},"primaryEnv":"ANTHROPIC_API_KEY"}}
 ---
 
 # LLM Router
@@ -11,7 +11,7 @@ An intelligent proxy that classifies incoming requests by complexity and routes 
 
 **Works with [OpenClaw](https://github.com/openclaw/openclaw)** to reduce token usage and API costs by routing simple requests to smaller models.
 
-**Status:** Currently tested with Anthropic only. Other providers are implemented but untested.
+**Status:** Tested with Anthropic and OpenAI (including o-series reasoning models). Google and local Ollama providers are implemented but untested.
 
 ## Quick Start
 
@@ -61,14 +61,26 @@ Options:
 Edit `config.yaml` to customize:
 
 ### Model Routing
+
 ```yaml
+# Anthropic routing
 models:
   super_easy: "anthropic:claude-haiku-4-5-20251001"
   easy: "anthropic:claude-haiku-4-5-20251001"
   medium: "anthropic:claude-sonnet-4-20250514"
   hard: "anthropic:claude-opus-4-20250514"
   super_hard: "anthropic:claude-opus-4-20250514"
+
+# OpenAI routing (including o-series reasoning models)
+models:
+  super_easy: "openai:gpt-4o-mini"
+  easy: "openai:gpt-4o-mini"
+  medium: "openai:gpt-4o"
+  hard: "openai:o3-mini"
+  super_hard: "openai:o3"
 ```
+
+**Note:** o-series models (o1, o3, o4-mini) are auto-detected and use correct API params.
 
 ### Classifier
 
@@ -100,7 +112,8 @@ Use remote (anthropic/openai) if your machine can't run local models.
 ### Supported Providers
 
 - `anthropic:claude-*` - Anthropic Claude models (tested)
-- `openai:gpt-*` - OpenAI GPT models (untested)
+- `openai:gpt-*` - OpenAI GPT models (tested)
+- `openai:o1-*`, `openai:o3-*`, `openai:o4-*` - OpenAI reasoning models (tested)
 - `google:gemini-*` - Google Gemini models (untested)
 - `local:model-name` - Local Ollama models (untested)
 

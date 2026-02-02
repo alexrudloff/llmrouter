@@ -6,13 +6,14 @@ An intelligent proxy that classifies incoming requests by complexity and routes 
 
 ## Status
 
-**Currently tested with Anthropic only.** OpenAI, Google, and local Ollama providers are implemented but untested.
+**Tested with Anthropic and OpenAI.** Google and local Ollama providers are implemented but untested.
 
 ## Features
 
 - **5-tier complexity routing**: super_easy, easy, medium, hard, super_hard
 - **Local classification**: Uses Ollama to classify requests locally (no API costs for classification)
-- **Multi-provider support**: Anthropic (tested), OpenAI, Google Gemini, Ollama (untested)
+- **Multi-provider support**: Anthropic (tested), OpenAI (tested), Google Gemini, Ollama (untested)
+- **OpenAI o-series support**: Automatically handles o1, o3, o4-mini reasoning models with correct API parameters
 - **OAuth token support**: Works with Claude Code OAuth tokens (sk-ant-oat*)
 - **OpenAI-compatible API**: Drop-in replacement for existing integrations
 - **Configurable classifier model**: Change the local model used for classification in config.yaml
@@ -46,7 +47,10 @@ Edit `config.yaml` to customize:
 
 ### Model Routing
 
+Configure which model handles each complexity level:
+
 ```yaml
+# Anthropic routing
 models:
   super_easy: "anthropic:claude-haiku-4-5-20251001"  # Fast, cheap
   easy: "anthropic:claude-sonnet-4-20250514"         # Balanced
@@ -54,6 +58,18 @@ models:
   hard: "anthropic:claude-opus-4-20250514"           # Powerful
   super_hard: "anthropic:claude-opus-4-20250514"     # Most capable
 ```
+
+```yaml
+# OpenAI routing (including o-series reasoning models)
+models:
+  super_easy: "openai:gpt-4o-mini"    # Fast, cheap
+  easy: "openai:gpt-4o-mini"          # Fast, cheap
+  medium: "openai:gpt-4o"             # Balanced
+  hard: "openai:o3-mini"              # Reasoning model
+  super_hard: "openai:o3"             # Most capable reasoning
+```
+
+**Note:** OpenAI o-series models (o1, o3, o4-mini) are automatically detected and use the correct API parameters (`max_completion_tokens` instead of `max_tokens`, `developer` role instead of `system`).
 
 ### Classifier
 
@@ -124,7 +140,8 @@ This allows routing to multiple providers without passing different keys per req
 ### Provider Formats
 
 - `anthropic:claude-*` - Anthropic Claude models (tested)
-- `openai:gpt-*` - OpenAI GPT models (untested)
+- `openai:gpt-*` - OpenAI GPT models (tested)
+- `openai:o1-*`, `openai:o3-*`, `openai:o4-*` - OpenAI reasoning models (tested)
 - `google:gemini-*` - Google Gemini models (untested)
 - `deepseek:deepseek-*` - DeepSeek models (untested)
 - `kimi:moonshot-*` - Kimi/Moonshot models (untested)
