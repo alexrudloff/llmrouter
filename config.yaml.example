@@ -14,6 +14,17 @@ classifier:
   ollama_url: "http://localhost:11434/api/generate"
   routes_file: "ROUTES.md"
 
+# Tool routing - controls model selection when tools are present
+# Some recommend using more capable models for tool use to reduce prompt injection risks
+tools:
+  # Option 1: Set minimum complexity floor when tools present
+  min_complexity: "easy"  # "easy", "medium", "hard", or "super_hard"
+
+  # Option 2: Force specific model for ALL tool calls (overrides min_complexity)
+  # model: "anthropic:claude-opus-4-20250514"
+
+  # If neither set, defaults to bumping super_easy -> easy
+
 # Model routing by complexity level
 # Format: "provider:model" where provider is: local, anthropic, openai, google
 #

@@ -1163,17 +1163,40 @@ class RouterHandler(BaseHTTPRequestHandler):
             )
             classify_time = (time.time() - start) * 1000
 
-            # If tools are present, bump super_easy to easy (tool use requires more capable model)
-            if tools and complexity == "super_easy":
-                complexity = "easy"
-                log(f"  Bumped super_easy -> easy (tools present)")
+            # Handle tool routing configuration
+            tool_model_override = None
+            if tools:
+                tools_config = CONFIG.get("tools", {})
+                tool_model_override = tools_config.get("model")
+                tool_min = tools_config.get("min_complexity")
+
+                if tool_model_override:
+                    # Direct model override - will skip complexity routing
+                    log(f"  Tools present: using override model {tool_model_override}")
+                elif tool_min:
+                    # Minimum complexity floor
+                    complexity_order = ["super_easy", "easy", "medium", "hard", "super_hard"]
+                    if complexity in complexity_order and tool_min in complexity_order:
+                        current_idx = complexity_order.index(complexity)
+                        min_idx = complexity_order.index(tool_min)
+                        if current_idx < min_idx:
+                            log(f"  Tools present: bumped {complexity} -> {tool_min}")
+                            complexity = tool_min
+                else:
+                    # Default behavior: bump super_easy to easy
+                    if complexity == "super_easy":
+                        complexity = "easy"
+                        log(f"  Tools present: bumped super_easy -> easy (default)")
 
             log(f"  Classifying ({len(user_message)} chars): '{user_message[:100]}...'")
             log(f"  -> {complexity} in {classify_time:.0f}ms")
 
-            # Map complexity to provider:model
-            provider_model = MODEL_MAP.get(complexity, MODEL_MAP["medium"])
-            provider, target_model = parse_provider_model(provider_model)
+            # Map complexity to provider:model (or use tool override)
+            if tool_model_override:
+                provider, target_model = parse_provider_model(tool_model_override)
+            else:
+                provider_model = MODEL_MAP.get(complexity, MODEL_MAP["medium"])
+                provider, target_model = parse_provider_model(provider_model)
 
             log(f"  '{user_message[:50]}...' -> {complexity} -> {provider}:{target_model} ({classify_time:.0f}ms)")
 

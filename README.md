@@ -91,6 +91,24 @@ models:
 
 **Note:** OpenAI reasoning models are automatically detected and use the correct API parameters.
 
+### Tool Routing
+
+When requests include tools (function calling), you may want to use more capable models to reduce prompt injection risks. Configure this in `config.yaml`:
+
+```yaml
+# Option 1: Set minimum complexity floor when tools present
+tools:
+  min_complexity: "medium"  # Bumps super_easy/easy -> medium
+```
+
+```yaml
+# Option 2: Force specific model for ALL tool calls
+tools:
+  model: "anthropic:claude-opus-4-20250514"  # Always use Opus for tools
+```
+
+If neither is set, defaults to bumping `super_easy` → `easy`.
+
 ### Classifier
 
 The classifier determines request complexity before routing. Three options:

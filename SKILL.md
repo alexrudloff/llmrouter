@@ -102,6 +102,22 @@ models:
 
 **Note:** Reasoning models are auto-detected and use correct API params.
 
+### Tool Routing
+
+Control model selection when requests include tools (function calling):
+
+```yaml
+# Option 1: Set minimum complexity floor
+tools:
+  min_complexity: "medium"  # Bumps super_easy/easy -> medium
+
+# Option 2: Force specific model for ALL tool calls
+tools:
+  model: "anthropic:claude-opus-4-20250514"
+```
+
+Some recommend using more capable models for tool use to reduce prompt injection risks. If neither option is set, defaults to bumping `super_easy` → `easy`.
+
 ### Classifier
 
 Three options for classifying request complexity:
