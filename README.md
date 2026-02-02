@@ -2,6 +2,8 @@
 
 An intelligent proxy that classifies incoming requests by complexity and routes them to appropriate LLM models. Save money by using cheaper/faster models for simple tasks and reserving expensive models for complex ones.
 
+**Works with [OpenClaw](https://github.com/openclaw/openclaw)** to reduce token usage and API costs by routing simple requests to smaller models.
+
 ## Status
 
 **Currently tested with Anthropic only.** OpenAI, Google, and local Ollama providers are implemented but untested.

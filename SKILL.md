@@ -9,6 +9,8 @@ metadata: {"openclaw":{"emoji":"🔀","homepage":"https://github.com/alexrudloff
 
 An intelligent proxy that classifies incoming requests by complexity and routes them to appropriate LLM models. Use cheaper/faster models for simple tasks and reserve expensive models for complex ones.
 
+**Works with [OpenClaw](https://github.com/openclaw/openclaw)** to reduce token usage and API costs by routing simple requests to smaller models.
+
 **Status:** Currently tested with Anthropic only. Other providers are implemented but untested.
 
 ## Quick Start
