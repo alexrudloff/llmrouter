@@ -1,6 +1,6 @@
 ---
 name: llmrouter
-description: Intelligent LLM proxy that routes requests to appropriate models based on complexity. Save money by using cheaper models for simple tasks. Tested with Anthropic, OpenAI, Gemini, and Ollama.
+description: Intelligent LLM proxy that routes requests to appropriate models based on complexity. Save money by using cheaper models for simple tasks. Tested with Anthropic, OpenAI, Gemini, Kimi/Moonshot, and Ollama.
 homepage: https://github.com/alexrudloff/llmrouter
 metadata: {"openclaw":{"emoji":"🔀","homepage":"https://github.com/alexrudloff/llmrouter","os":["darwin","linux"],"requires":{"bins":["python3"],"anyBins":["pip","pip3"]},"primaryEnv":"ANTHROPIC_API_KEY"}}
 ---
@@ -11,7 +11,7 @@ An intelligent proxy that classifies incoming requests by complexity and routes 
 
 **Works with [OpenClaw](https://github.com/openclaw/openclaw)** to reduce token usage and API costs by routing simple requests to smaller models.
 
-**Status:** Tested with Anthropic, OpenAI (including o-series), Google Gemini, and Ollama.
+**Status:** Tested with Anthropic, OpenAI (including o-series), Google Gemini, Kimi/Moonshot, and Ollama.
 
 ## Quick Start
 
@@ -122,7 +122,14 @@ classifier:
   model: "gemini-2.0-flash"
 ```
 
-Use remote (anthropic/openai/google) if your machine can't run local models.
+**Kimi** - Uses Moonshot:
+```yaml
+classifier:
+  provider: "kimi"
+  model: "moonshot-v1-8k"
+```
+
+Use remote (anthropic/openai/google/kimi) if your machine can't run local models.
 
 ### Supported Providers
 
@@ -130,6 +137,7 @@ Use remote (anthropic/openai/google) if your machine can't run local models.
 - `openai:gpt-*` - OpenAI GPT models (tested)
 - `openai:o1-*`, `openai:o3-*`, `openai:o4-*` - OpenAI reasoning models (tested)
 - `google:gemini-*` - Google Gemini models (tested)
+- `kimi:kimi-k2.5`, `kimi:moonshot-*` - Kimi/Moonshot models (tested)
 - `local:model-name` - Local Ollama models (tested)
 
 ## Complexity Levels

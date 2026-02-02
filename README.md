@@ -6,7 +6,7 @@ An intelligent proxy that classifies incoming requests by complexity and routes 
 
 ## Status
 
-**Tested with Anthropic, OpenAI, Google Gemini, and Ollama.**
+**Tested with Anthropic, OpenAI, Google Gemini, Kimi/Moonshot, and Ollama.**
 
 ## Features
 
@@ -79,6 +79,16 @@ models:
   super_hard: "google:gemini-2.0-flash"
 ```
 
+```yaml
+# Kimi/Moonshot routing
+models:
+  super_easy: "kimi:moonshot-v1-8k"
+  easy: "kimi:moonshot-v1-32k"
+  medium: "kimi:kimi-k2.5"
+  hard: "kimi:kimi-k2.5"
+  super_hard: "kimi:kimi-k2.5"
+```
+
 **Note:** OpenAI o-series models (o1, o3, o4-mini) are automatically detected and use the correct API parameters (`max_completion_tokens` instead of `max_tokens`, `developer` role instead of `system`).
 
 ### Classifier
@@ -131,7 +141,17 @@ classifier:
   model: "gemini-2.0-flash"
 ```
 
-Choose remote (anthropic/openai/google) if:
+#### Kimi Classification
+
+Uses Kimi/Moonshot for classification.
+
+```yaml
+classifier:
+  provider: "kimi"
+  model: "moonshot-v1-8k"
+```
+
+Choose remote (anthropic/openai/google/kimi) if:
 - Your machine can't run local models
 - You want simpler setup (no Ollama required)
 
@@ -163,9 +183,9 @@ This allows routing to multiple providers without passing different keys per req
 - `openai:gpt-*` - OpenAI GPT models (tested)
 - `openai:o1-*`, `openai:o3-*`, `openai:o4-*` - OpenAI reasoning models (tested)
 - `google:gemini-*` - Google Gemini models (tested)
+- `kimi:kimi-k2.5`, `kimi:moonshot-*` - Kimi/Moonshot models (tested)
 - `local:model-name` - Local Ollama models (tested)
 - `deepseek:deepseek-*` - DeepSeek models (untested)
-- `kimi:moonshot-*` - Kimi/Moonshot models (untested)
 
 ## Usage
 
