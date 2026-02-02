@@ -194,19 +194,35 @@ def _classify_with_anthropic(prompt: str, model: str, api_key: str) -> str:
     return ""
 
 
+def _is_openai_reasoning_model(model: str) -> bool:
+    """Check if model is an OpenAI o-series reasoning model."""
+    model_lower = model.lower()
+    return (
+        model_lower.startswith("o1") or
+        model_lower.startswith("o3") or
+        model_lower.startswith("o4")
+    )
+
+
 def _classify_with_openai(prompt: str, model: str, api_key: str) -> str:
     """Classify using OpenAI API."""
+    # Build payload - o-series models use max_completion_tokens
+    payload = {
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}],
+    }
+    if _is_openai_reasoning_model(model):
+        payload["max_completion_tokens"] = 50
+    else:
+        payload["max_tokens"] = 50
+
     response = requests.post(
         "https://api.openai.com/v1/chat/completions",
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         },
-        json={
-            "model": model,
-            "max_tokens": 50,
-            "messages": [{"role": "user", "content": prompt}],
-        },
+        json=payload,
         timeout=30
     )
     response.raise_for_status()
