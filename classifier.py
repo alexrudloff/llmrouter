@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 # Defaults (can be overridden via function parameters)
-DEFAULT_PROVIDER = "local"  # "local" (Ollama) or "anthropic"
+DEFAULT_PROVIDER = "local"  # "local" (Ollama) or "api" (remote, e.g. Anthropic)
 DEFAULT_OLLAMA_URL = "http://localhost:11434/api/generate"
 DEFAULT_MODEL = "qwen2.5:3b"
 DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
@@ -202,8 +202,8 @@ def classify(message: str, rules: str = None, model: str = None,
     Args:
         message: The message to classify
         rules: Classification rules (loaded from ROUTES.md if not provided)
-        model: Model to use (default: qwen2.5:3b for local, claude-haiku-4-5-20251001 for anthropic)
-        provider: "local" (Ollama) or "anthropic" (default: local)
+        model: Model to use (default: qwen2.5:3b for local, claude-haiku-4-5-20251001 for api)
+        provider: "local" (Ollama) or "api" (remote, currently Anthropic) (default: local)
         ollama_url: Ollama API URL (default: http://localhost:11434/api/generate)
         api_key: Anthropic API key (required if provider is "anthropic", uses ANTHROPIC_API_KEY env var if not provided)
     """
@@ -215,7 +215,7 @@ def classify(message: str, rules: str = None, model: str = None,
     prompt = _build_prompt(message, rules)
 
     try:
-        if provider == "anthropic":
+        if provider == "api":
             if not api_key:
                 raise ValueError("API key/token required for remote classification (passed from request)")
             if model is None:

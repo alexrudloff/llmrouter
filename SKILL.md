@@ -81,14 +81,14 @@ classifier:
   model: "qwen2.5:3b"
 ```
 
-**Remote** - No local hardware needed, uses your API token:
+**Remote (API)** - No local hardware needed, uses your API token:
 ```yaml
 classifier:
-  provider: "anthropic"
+  provider: "api"
   model: "claude-haiku-4-5-20251001"
 ```
 
-Use remote if your machine can't run local models or you want simpler setup.
+Use remote if your machine can't run local models or you want simpler setup. Currently uses Anthropic; other providers planned.
 
 ### Supported Providers
 

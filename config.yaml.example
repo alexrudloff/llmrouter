@@ -7,10 +7,10 @@ server:
   port: 4001  # Default port, can be overridden with --port
 
 # Classifier settings
-# provider: "local" (Ollama, free) or "anthropic" (uses API key from request)
+# provider: "local" (Ollama, free) or "api" (remote, currently Anthropic)
 classifier:
-  provider: "local"  # Use "anthropic" if you can't run local models
-  model: "qwen2.5:3b"  # For local: any Ollama model. For anthropic: e.g., claude-haiku-4-5-20251001
+  provider: "local"  # Use "api" if you can't run local models
+  model: "qwen2.5:3b"  # For local: any Ollama model. For api: e.g., claude-haiku-4-5-20251001
   ollama_url: "http://localhost:11434/api/generate"
   routes_file: "ROUTES.md"
 

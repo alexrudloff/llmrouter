@@ -75,13 +75,13 @@ classifier:
 ollama pull qwen2.5:3b
 ```
 
-#### Remote Classification
+#### Remote Classification (API)
 
-Uses Anthropic Haiku via API. No local hardware needed, small cost per classification. Supports both API keys and OAuth tokens (passed through from your request).
+Uses a remote API for classification (currently Anthropic Haiku). No local hardware needed, small cost per classification. Supports both API keys and OAuth tokens (passed through from your request).
 
 ```yaml
 classifier:
-  provider: "anthropic"
+  provider: "api"
   model: "claude-haiku-4-5-20251001"
 ```
 
