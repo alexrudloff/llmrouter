@@ -204,6 +204,7 @@ Create `~/Library/LaunchAgents/com.llmrouter.plist`:
     <array>
         <string>/path/to/llmrouter/venv/bin/python</string>
         <string>/path/to/llmrouter/server.py</string>
+        <string>--openclaw</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
@@ -292,15 +293,19 @@ To use the router for all agents by default, add:
 
 If your `config.yaml` uses an Anthropic OAuth token from OpenClaw's `~/.openclaw/auth-profiles.json`, the router automatically handles Claude Code identity headers.
 
-### OpenClaw Compatibility Mode
+### OpenClaw Compatibility Mode (Required)
 
-Start with `--openclaw` to display actual model names in OpenClaw UI:
+**If using with OpenClaw, you MUST start the server with `--openclaw`:**
 
 ```bash
 python server.py --openclaw
 ```
 
-This rewrites the model name in responses so OpenClaw shows "anthropic:claude-sonnet-4" instead of "localrouter/llm-router".
+This flag enables compatibility features required for OpenClaw:
+- Rewrites model names in responses so OpenClaw shows the actual model being used
+- Handles tool name and ID remapping for proper tool call routing
+
+Without this flag, you may encounter errors when using the router with OpenClaw.
 
 ## Common Tasks
 

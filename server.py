@@ -342,6 +342,16 @@ def is_oauth_token(api_key):
     return "sk-ant-oat" in api_key
 
 
+def sanitize_tool_id(tool_id):
+    """Sanitize tool_use ID to match Anthropic's pattern: ^[a-zA-Z0-9_-]+$"""
+    if not tool_id:
+        return "tool_0"
+    # Replace any invalid characters with underscore
+    sanitized = re.sub(r'[^a-zA-Z0-9_-]', '_', str(tool_id))
+    # Ensure it's not empty after sanitization
+    return sanitized if sanitized else "tool_0"
+
+
 def call_anthropic_model(model, messages, max_tokens, system=None, api_key=None, tools=None):
     """Call Anthropic API - supports both OAuth tokens and API keys
 
@@ -602,7 +612,7 @@ def call_openai_model(model, messages, max_tokens, system=None, api_key=None, to
         for tc in message["tool_calls"]:
             content_blocks.append({
                 "type": "tool_use",
-                "id": tc.get("id", ""),
+                "id": sanitize_tool_id(tc.get("id", "")),
                 "name": tc.get("function", {}).get("name", ""),
                 "input": json.loads(tc.get("function", {}).get("arguments", "{}"))
             })
@@ -949,7 +959,7 @@ def call_kimi_model(model, messages, max_tokens, system=None, api_key=None, tool
         for tc in message["tool_calls"]:
             content_blocks.append({
                 "type": "tool_use",
-                "id": tc.get("id", ""),
+                "id": sanitize_tool_id(tc.get("id", "")),
                 "name": tc.get("function", {}).get("name", ""),
                 "input": json.loads(tc.get("function", {}).get("arguments", "{}"))
             })
@@ -1180,7 +1190,7 @@ class RouterHandler(BaseHTTPRequestHandler):
                         "role": "user",
                         "content": [{
                             "type": "tool_result",
-                            "tool_use_id": tool_call_id,
+                            "tool_use_id": sanitize_tool_id(tool_call_id),
                             "content": tool_content
                         }]
                     })
@@ -1207,7 +1217,7 @@ class RouterHandler(BaseHTTPRequestHandler):
                 for tc in tool_calls:
                     tool_use = {
                         "type": "tool_use",
-                        "id": tc.get("id", ""),
+                        "id": sanitize_tool_id(tc.get("id", "")),
                         "name": tc.get("function", {}).get("name", ""),
                         "input": json.loads(tc.get("function", {}).get("arguments", "{}"))
                     }
