@@ -548,7 +548,9 @@ class RouterHandler(BaseHTTPRequestHandler):
             complexity = classify(
                 user_message,
                 model=classifier_config.get("model"),
-                ollama_url=classifier_config.get("ollama_url")
+                provider=classifier_config.get("provider"),
+                ollama_url=classifier_config.get("ollama_url"),
+                api_key=api_key,  # Pass through for remote classification
             )
             classify_time = (time.time() - start) * 1000
 
@@ -693,10 +695,12 @@ class RouterHandler(BaseHTTPRequestHandler):
         path = urlparse(self.path).path
 
         if path == "/health":
+            classifier_config = CONFIG.get("classifier", {})
             self.send_json({
                 "status": "ok",
                 "mode": "proxy",
-                "classifier": CONFIG.get("classifier", {}).get("model", "qwen2.5:3b"),
+                "classifier_provider": classifier_config.get("provider", "local"),
+                "classifier_model": classifier_config.get("model", "qwen2.5:3b"),
                 "models": list(MODEL_MAP.keys()),
             })
         elif path == "/v1/models":
@@ -769,7 +773,10 @@ API Keys:
     server = HTTPServer((host, port), RouterHandler)
     print(f"\n🚀 Multi-Provider Router (Proxy Mode)")
     print(f"   http://{host}:{port}")
-    print(f"\n📊 Classifier: {CONFIG.get('classifier', {}).get('model', 'qwen2.5:3b')}")
+    classifier_config = CONFIG.get('classifier', {})
+    classifier_provider = classifier_config.get('provider', 'local')
+    classifier_model = classifier_config.get('model', 'qwen2.5:3b')
+    print(f"\n📊 Classifier: {classifier_provider}:{classifier_model}")
     print(f"\n🎯 Model Routing (5-tier):")
     for tier in ["super_easy", "easy", "medium", "hard", "super_hard"]:
         provider_model = MODEL_MAP.get(tier, "not configured")

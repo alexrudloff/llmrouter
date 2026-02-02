@@ -20,7 +20,7 @@ An intelligent proxy that classifies incoming requests by complexity and routes 
 ## Requirements
 
 - Python 3.10+
-- [Ollama](https://ollama.ai) running locally
+- [Ollama](https://ollama.ai) running locally (optional if using Anthropic for classification)
 - Anthropic API key (or Claude Code OAuth token)
 
 ## Installation
@@ -55,13 +55,39 @@ models:
   super_hard: "anthropic:claude-opus-4-20250514"     # Most capable
 ```
 
-### Classifier Model
+### Classifier
+
+The classifier determines request complexity before routing. Two options:
+
+#### Local Classification (default)
+
+Uses Ollama running on your machine. Free, but requires local hardware.
 
 ```yaml
 classifier:
+  provider: "local"
   model: "qwen2.5:3b"  # Any Ollama model
   ollama_url: "http://localhost:11434/api/generate"
 ```
+
+```bash
+# Setup
+ollama pull qwen2.5:3b
+```
+
+#### Remote Classification
+
+Uses Anthropic Haiku via API. No local hardware needed, small cost per classification. Supports both API keys and OAuth tokens (passed through from your request).
+
+```yaml
+classifier:
+  provider: "anthropic"
+  model: "claude-haiku-4-5-20251001"
+```
+
+Choose remote if:
+- Your machine can't run local models
+- You want simpler setup (no Ollama required)
 
 ### Provider Formats
 

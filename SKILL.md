@@ -17,7 +17,7 @@ An intelligent proxy that classifies incoming requests by complexity and routes 
 
 ### Prerequisites
 
-1. **Ollama** running locally with a classifier model:
+1. **Ollama** (optional - only if using local classification):
    ```bash
    ollama pull qwen2.5:3b
    ```
@@ -70,12 +70,25 @@ models:
   super_hard: "anthropic:claude-opus-4-20250514"
 ```
 
-### Classifier Model
+### Classifier
+
+Two options for classifying request complexity:
+
+**Local (default)** - Free, requires Ollama:
 ```yaml
 classifier:
-  model: "qwen2.5:3b"  # Any Ollama model
-  ollama_url: "http://localhost:11434/api/generate"
+  provider: "local"
+  model: "qwen2.5:3b"
 ```
+
+**Remote** - No local hardware needed, uses your API token:
+```yaml
+classifier:
+  provider: "anthropic"
+  model: "claude-haiku-4-5-20251001"
+```
+
+Use remote if your machine can't run local models or you want simpler setup.
 
 ### Supported Providers
 
