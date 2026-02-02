@@ -631,14 +631,35 @@ class RouterHandler(BaseHTTPRequestHandler):
                     })
                     continue
 
-                # Convert content format to Anthropic-style (works for most providers)
+                # Handle assistant messages with tool_calls (OpenAI format)
+                # Convert to Anthropic's tool_use content blocks
+                tool_calls = msg.get("tool_calls", [])
+
+                anthropic_content = []
+
+                # Add text content if present and not null
                 if isinstance(content, list):
-                    provider_messages.append({"role": role, "content": content})
-                else:
-                    provider_messages.append({
-                        "role": role,
-                        "content": [{"type": "text", "text": content}]
-                    })
+                    for item in content:
+                        if isinstance(item, dict):
+                            if item.get("type") == "text" and item.get("text"):
+                                anthropic_content.append(item)
+                            elif item.get("type") != "text":
+                                anthropic_content.append(item)
+                elif content:
+                    anthropic_content.append({"type": "text", "text": content})
+
+                # Convert OpenAI tool_calls to Anthropic tool_use blocks
+                for tc in tool_calls:
+                    tool_use = {
+                        "type": "tool_use",
+                        "id": tc.get("id", ""),
+                        "name": tc.get("function", {}).get("name", ""),
+                        "input": json.loads(tc.get("function", {}).get("arguments", "{}"))
+                    }
+                    anthropic_content.append(tool_use)
+
+                if anthropic_content:
+                    provider_messages.append({"role": role, "content": anthropic_content})
 
             # In openclaw mode, rewrite model= in system prompt Runtime line
             if OPENCLAW_MODE and system_content:
