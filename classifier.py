@@ -54,16 +54,14 @@ def _extract_complexity(result_text: str) -> str:
     result_text = re.sub(r'<think>.*?</think>', '', result_text, flags=re.DOTALL).strip()
     result_text = re.sub(r'</?think>', '', result_text).strip()
 
-    # Look for complexity levels in the text
-    for level in COMPLEXITY_LEVELS:
-        if level in result_text:
-            return level
+    # Exact match first (for clean single-word responses)
+    if result_text in COMPLEXITY_LEVELS:
+        return result_text
 
-    # Try extracting first word as fallback
-    if result_text:
-        result = result_text.split()[0] if result_text.split() else ""
-        if result in COMPLEXITY_LEVELS:
-            return result
+    # Word boundary match (check super_ variants first to avoid partial matches)
+    for level in ("super_hard", "super_easy", "hard", "medium", "easy"):
+        if re.search(rf'\b{level}\b', result_text):
+            return level
 
     return ""
 
