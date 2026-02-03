@@ -48,6 +48,8 @@ MODEL_MAP = {}
 PROVIDER_URLS = {}
 PROVIDER_KEYS = {}  # API keys per provider from config
 OPENCLAW_MODE = False  # Set via --openclaw flag (only for model name rewriting in system prompt)
+PINCH_MODE = False  # Set via --pinch flag (context pruning)
+PINCH_STATS = {"requests": 0, "pruned": 0, "tokens_saved": 0}  # Running stats
 
 
 def load_config(config_path="config.yaml"):
@@ -136,6 +138,21 @@ def extract_text_content(content):
             if isinstance(item, dict) and item.get("type") == "text"
         )
     return ""
+
+
+# ============================================================================
+# Pinch: Intelligent Context Pruning
+# ============================================================================
+
+try:
+    from pinch import prune_context, prune_context_simple, estimate_tokens, extract_text
+    PINCH_AVAILABLE = True
+except ImportError:
+    PINCH_AVAILABLE = False
+    def prune_context(messages, config):
+        return messages, {"pruned": False, "reason": "module not available"}
+    def estimate_tokens(text):
+        return len(text) // 4 if text else 0
 
 
 def call_local_model(model, messages, max_tokens, system=None, api_key=None, tools=None):
@@ -1216,6 +1233,22 @@ class RouterHandler(BaseHTTPRequestHandler):
 
             log(f"  '{user_message[:50]}...' -> {complexity} -> {provider}:{target_model} ({classify_time:.0f}ms)")
 
+            # Pinch: Prune context if enabled
+            if PINCH_MODE:
+                tp_config = CONFIG.get("pinch", {})
+                messages, tp_stats = prune_context(messages, tp_config)
+                PINCH_STATS["requests"] += 1
+                if tp_stats.get("pruned"):
+                    PINCH_STATS["pruned"] += 1
+                    PINCH_STATS["tokens_saved"] += tp_stats.get("tokens_saved", 0)
+                    # Log with new format (kept/summarized/dropped)
+                    kept = tp_stats.get("items_kept", tp_stats.get("items_trimmed", 0))
+                    summarized = tp_stats.get("items_summarized", 0)
+                    dropped = tp_stats.get("items_dropped", tp_stats.get("items_cleared", 0))
+                    embeddings = "✓" if tp_stats.get("used_embeddings") else "✗"
+                    log(f"  Pinch: {tp_stats['original_tokens']:,} -> {tp_stats['final_tokens']:,} tokens "
+                        f"(kept:{kept} summ:{summarized} drop:{dropped} emb:{embeddings})")
+
             # Build provider-agnostic message format
             provider_messages = []
             system_content = None
@@ -1351,13 +1384,21 @@ class RouterHandler(BaseHTTPRequestHandler):
 
         if path == "/health":
             classifier_config = CONFIG.get("classifier", {})
-            self.send_json({
+            health = {
                 "status": "ok",
                 "mode": "proxy",
                 "classifier_provider": classifier_config.get("provider", "local"),
                 "classifier_model": classifier_config.get("model", "qwen2.5:3b"),
                 "models": list(MODEL_MAP.keys()),
-            })
+            }
+            if PINCH_MODE:
+                health["pinch"] = {
+                    "enabled": True,
+                    "requests": PINCH_STATS["requests"],
+                    "pruned": PINCH_STATS["pruned"],
+                    "tokens_saved": PINCH_STATS["tokens_saved"],
+                }
+            self.send_json(health)
         elif path == "/v1/models":
             self.send_json({
                 "data": [
@@ -1408,13 +1449,19 @@ API Keys:
         action="store_true",
         help="Enable verbose request/response logging"
     )
+    parser.add_argument(
+        "--pinch",
+        action="store_true",
+        help="Enable context pruning to reduce token usage"
+    )
 
     args = parser.parse_args()
 
     # Set global flags
-    global OPENCLAW_MODE, VERBOSE_LOG
+    global OPENCLAW_MODE, VERBOSE_LOG, PINCH_MODE
     OPENCLAW_MODE = args.openclaw
     VERBOSE_LOG = args.log
+    PINCH_MODE = args.pinch
 
     # Load configuration
     print("Loading configuration...")
@@ -1437,6 +1484,9 @@ API Keys:
         provider_model = MODEL_MAP.get(tier, "not configured")
         print(f"   {tier:12} -> {provider_model}")
     print(f"\n🔑 Auth: supports both OAuth tokens (sk-ant-oat*) and API keys (sk-ant-api*)")
+    if PINCH_MODE:
+        tp_config = CONFIG.get("pinch", {})
+        print(f"\n✂️  Pinch: ENABLED (max_tokens={tp_config.get('max_tokens', 50000)})")
     print(f"\n✓ Ready for requests")
     print()
 

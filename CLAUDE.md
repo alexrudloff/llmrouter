@@ -21,6 +21,7 @@ ollama pull qwen2.5:3b
 python server.py
 python server.py --port 4001 --log  # with logging
 python server.py --openclaw         # for OpenClaw integration
+python server.py --openclaw --pinch  # with context pruning (experimental)
 
 # Test classifier directly
 python classifier.py "your message"
@@ -90,3 +91,59 @@ Auth priority: OAuth tokens from request header > config file API keys
 - Max tokens: 8192 if not specified
 - Classification fallback: "medium" on error
 - Tool ID pattern: `^[a-zA-Z0-9_-]+$` (sanitized for Anthropic)
+
+## Pinch: Intelligent Context Pruning (EXPERIMENTAL)
+
+> **⚠️ Experimental & Optional** - This feature is under active development. Enable only if you want to test embedding-based context pruning. May have rough edges.
+
+Enable with `--pinch` flag. Scores message relevance using embeddings to intelligently prune context.
+
+### How it works
+1. Identifies query window (recent messages to protect)
+2. Scores older messages against current query via cosine similarity
+3. Applies keep/summarize/drop decisions based on thresholds
+4. Falls back to position-based pruning if embeddings unavailable
+
+### Embedding Configuration (CRITICAL)
+
+**Fallback chain (matches OpenClaw):** local (Ollama) → OpenAI → Gemini
+
+Pinch follows the same fallback strategy as OpenClaw's `memorySearch`. Both systems should use the same primary model for cache compatibility.
+
+**Dimension warning:** Different models produce incompatible vectors:
+- `nomic-embed-text` (Ollama): 768 dimensions
+- `text-embedding-3-small` (OpenAI): 1536 dimensions
+- `text-embedding-004` (Gemini): 768 dimensions
+
+```yaml
+# config.yaml - llmrouter
+pinch:
+  embeddings:
+    ollama_url: "http://127.0.0.1:11434"
+    model: "nomic-embed-text"  # Should match OpenClaw
+    # Falls back to OpenAI (OPENAI_API_KEY) then Gemini (GEMINI_API_KEY)
+```
+
+```json5
+// ~/.openclaw/openclaw.json - OpenClaw
+"memorySearch": {
+  "provider": "openai",
+  "model": "nomic-embed-text",  // Should match llmrouter
+  "remote": {
+    "baseUrl": "http://127.0.0.1:11434/v1/",
+    "apiKey": "ollama"
+  },
+  "fallback": "openai"  // or "gemini" - should match llmrouter's fallback
+}
+```
+
+If all embedding providers fail, Pinch falls back to position-based pruning.
+
+### Setup
+```bash
+# Pull the embedding model
+ollama pull nomic-embed-text
+
+# Start with pinch enabled (experimental)
+python server.py --openclaw --pinch
+```
