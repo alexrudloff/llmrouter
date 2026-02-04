@@ -1358,6 +1358,7 @@ class RouterHandler(BaseHTTPRequestHandler):
                 # Send streaming response with tool calls
                 # Check if we used OAuth token (for tool name remapping)
                 used_oauth = is_oauth_token(effective_key) if provider == "anthropic" else False
+                log(f"  Tool response ({usage['prompt_tokens']}+{usage['completion_tokens']} tokens)")
                 self.send_streaming_tool_response(response_id, model_name, content_blocks, usage, anthropic_response.get("stop_reason", "tool_use"), use_oauth=used_oauth)
             else:
                 # Extract text content
@@ -1367,7 +1368,7 @@ class RouterHandler(BaseHTTPRequestHandler):
                         response_content += block.get("text", "")
 
                 # Log response
-                log(f"  Response: '{response_content[:100]}...'")
+                log(f"  Response: '{response_content[:100]}...' ({usage['prompt_tokens']}+{usage['completion_tokens']} tokens)")
 
                 # Send streaming response (openclaw expects SSE format)
                 self.send_streaming_response(response_id, model_name, response_content, usage)
